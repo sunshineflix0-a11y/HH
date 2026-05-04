@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Y2Mate - 3D YouTube Downloader</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Syne:wght@600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+  html, body { height: 100%; width: 100%; margin: 0; font-family: 'Space Grotesk', sans-serif; }
+  .font-display { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; }
+
+  /* Animated gradient background */
+  .hero-bg {
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(255, 61, 87, 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(138, 43, 226, 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(255, 165, 0, 0.25) 0%, transparent 50%),
+      linear-gradient(180deg, #0a0612 0%, #13081f 100%);
+  }
+
+  /* Grid pattern overlay */
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* 3D Floating shapes */
+  .shape-3d {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(1px);
+    animation: float 8s ease-in-out infinite;
+    box-shadow: inset -20px -20px 60px rgba(0,0,0,0.3), inset 20px 20px 60px rgba(255,255,255,0.2);
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(15deg); }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 60px rgba(255, 61, 87, 0.5), 0 0 120px rgba(138, 43, 226, 0.3); }
+    50% { box-shadow: 0 0 80px rgba(255, 61, 87, 0.7), 0 0 160px rgba(138, 43, 226, 0.5); }
+  }
+
+  /* 3D Card tilt */
+  .tilt-card {
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .tilt-card:hover {
+    transform: perspective(1000px) rotateY(-8deg) rotateX(5deg) translateY(-8px);
+  }
+  .tilt-card img { transition: transform 0.5s ease; }
+  .tilt-card:hover img { transform: scale(1.08); }
+
+  /* 3D Button */
+  .btn-3d {
+    position: relative;
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 0 #a01029, 0 12px 24px rgba(255, 61, 87, 0.4);
+  }
+  .btn-3d:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #a01029, 0 16px 28px rgba(255, 61, 87, 0.5); }
+  .btn-3d:active { transform: translateY(4px); box-shadow: 0 2px 0 #a01029, 0 4px 12px rgba(255, 61, 87, 0.3); }
+
+  /* Staggered reveals */
+  .reveal { opacity: 0; transform: translateY(30px); animation: reveal 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+  @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+
+  /* Marquee */
+  .marquee-track { animation: marquee 40s linear infinite; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* Glass effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Noise texture */
+  .noise::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.06; pointer-events: none; mix-blend-mode: overlay;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #0a0612; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #ff3d57, #8a2be2); border-radius: 10px; }
+
+  /* Tab active */
+  .tab-active {
+    background: linear-gradient(135deg, #ff3d57, #ff6b3d);
+    color: white;
+    box-shadow: 0 8px 24px rgba(255, 61, 87, 0.4);
+  }
+
+  /* Feature icon box */
+  .feature-box {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.4s ease;
+  }
+  .feature-box:hover {
+    border-color: rgba(255, 61, 87, 0.4);
+    transform: translateY(-4px);
+    background: linear-gradient(135deg, rgba(255, 61, 87, 0.1), rgba(138, 43, 226, 0.05));
+  }
+
+  /* Vinyl record animation */
+  .vinyl { animation: spin-slow 6s linear infinite; }
+
+  /* Play button pulse */
+  @keyframes ping-slow {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .play-ping { animation: ping-slow 1.8s ease-out infinite; }
+</style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full w-full bg-[#0a0612] text-white overflow-x-hidden">
+  <div class="h-full w-full overflow-auto">
+   <!-- ===== NAV ===== -->
+   <header class="sticky top-0 z-50 glass">
+    <nav class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+     <div class="flex items-center gap-3">
+      <div class="relative w-11 h-11 rounded-xl bg-gradient-to-br from-[#ff3d57] to-[#8a2be2] flex items-center justify-center shadow-lg shadow-pink-500/30">
+       <i data-lucide="play" class="w-5 h-5 fill-white text-white"></i>
+       <div class="absolute inset-0 rounded-xl bg-gradient-to-br from-[#ff3d57] to-[#8a2be2] blur-md opacity-50 -z-10"></div>
+      </div>
+      <div>
+       <div id="siteTitle" class="font-display font-bold text-xl">
+        Y2Mate
+       </div>
+       <div id="siteTagline" class="text-[10px] uppercase tracking-[0.2em] text-white/50">
+        YouTube Downloader
+       </div>
+      </div>
+     </div>
+     <div class="hidden md:flex items-center gap-8 text-sm font-medium text-white/70">
+      <a href="#converter" class="hover:text-white transition">Converter</a> <a href="#trending" class="hover:text-white transition">Trending</a> <a href="#features" class="hover:text-white transition">Features</a> <a href="#how" class="hover:text-white transition">How it works</a>
+     </div><button class="btn-3d bg-gradient-to-r from-[#ff3d57] to-[#ff6b3d] px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2"> <i data-lucide="zap" class="w-4 h-4"></i> Go Pro </button>
+    </nav>
+   </header><!-- ===== HERO ===== -->
+   <section class="relative hero-bg noise overflow-hidden">
+    <div class="absolute inset-0 grid-pattern"></div><!-- Floating 3D shapes -->
+    <div class="shape-3d hidden md:block" style="width:120px;height:120px;background:radial-gradient(circle at 30% 30%, #ff3d57, #8a2be2);top:15%;left:6%;animation-delay:0s;"></div>
+    <div class="shape-3d hidden md:block" style="width:80px;height:80px;background:radial-gradient(circle at 30% 30%, #ffa500, #ff3d57);top:60%;left:3%;animation-delay:2s;"></div>
+    <div class="shape-3d hidden md:block" style="width:160px;height:160px;background:radial-gradient(circle at 30% 30%, #8a2be2, #3a1d5c);top:20%;right:5%;animation-delay:1s;"></div>
+    <div class="shape-3d hidden md:block" style="width:60px;height:60px;background:radial-gradient(circle at 30% 30%, #00e5ff, #8a2be2);top:70%;right:10%;animation-delay:3s;"></div>
+    <div class="relative max-w-7xl mx-auto px-6 pt-16 pb-24 grid lg:grid-cols-2 gap-12 items-center">
+     <div>
+      <div class="reveal inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs font-medium text-white/80 mb-6" style="animation-delay:.1s;">
+       <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> 2.3.2 · Ad-free experience
+      </div>
+      <h1 id="heroHeading" class="reveal font-display text-5xl md:text-7xl font-800 leading-[0.95] mb-6" style="animation-delay:.2s;">Convert <span class="bg-gradient-to-r from-[#ff3d57] via-[#ff6b3d] to-[#ffa500] bg-clip-text text-transparent">anything</span><br>
+        into <span class="italic font-light">MP3 · MP4</span></h1>
+      <p id="heroDescription" class="reveal text-lg text-white/60 max-w-lg mb-8 leading-relaxed" style="animation-delay:.3s;">The fastest free YouTube, Facebook, and TikTok downloader. High-quality audio and video conversion in seconds — no signup, no limits.</p><!-- Converter box -->
+      <div id="converter" class="reveal glass rounded-3xl p-6 shadow-2xl shadow-pink-500/10" style="animation-delay:.4s;">
+       <div class="flex gap-2 mb-4 p-1 bg-black/30 rounded-xl w-fit">
+        <button data-format="mp3" class="format-tab tab-active px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition"> <i data-lucide="music-2" class="w-4 h-4"></i> MP3 </button> <button data-format="mp4" class="format-tab px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-white/60 hover:text-white transition"> <i data-lucide="video" class="w-4 h-4"></i> MP4 </button>
+       </div>
+       <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+         <i data-lucide="link" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"></i> <input id="urlInput" type="text" placeholder="Paste your YouTube / Facebook / TikTok link here..." class="w-full pl-11 pr-4 py-4 rounded-xl bg-black/40 border border-white/10 focus:border-[#ff3d57] focus:outline-none text-sm placeholder-white/30 transition">
+        </div><button id="convertBtn" class="btn-3d bg-gradient-to-r from-[#ff3d57] to-[#ff6b3d] px-7 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 whitespace-nowrap"> <i data-lucide="download" class="w-4 h-4"></i> Convert Now </button>
+       </div>
+       <div class="flex flex-wrap items-center gap-4 mt-4 text-xs text-white/50">
+        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-green-400"></i> 100% Safe</span> <span class="flex items-center gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-400"></i> Ultra Fast</span> <span class="flex items-center gap-1.5"><i data-lucide="infinity" class="w-3.5 h-3.5 text-blue-400"></i> Unlimited</span> <span class="flex items-center gap-1.5"><i data-lucide="wallet" class="w-3.5 h-3.5 text-pink-400"></i> Free Forever</span>
+       </div>
+      </div>
+      <div class="reveal flex items-center gap-8 mt-8 text-sm" style="animation-delay:.5s;">
+       <div>
+        <div class="font-display text-2xl font-bold">
+         120M+
+        </div>
+        <div class="text-white/50 text-xs">
+         Downloads
+        </div>
+       </div>
+       <div class="w-px h-8 bg-white/10"></div>
+       <div>
+        <div class="font-display text-2xl font-bold">
+         5.8M
+        </div>
+        <div class="text-white/50 text-xs">
+         Users
+        </div>
+       </div>
+       <div class="w-px h-8 bg-white/10"></div>
+       <div>
+        <div class="font-display text-2xl font-bold">
+         4K
+        </div>
+        <div class="text-white/50 text-xs">
+         Max Quality
+        </div>
+       </div>
+      </div>
+     </div><!-- 3D Vinyl / Visual -->
+     <div class="relative hidden lg:flex justify-center items-center" style="animation:reveal 1s .4s both;">
+      <!-- Outer glow ring -->
+      <div class="absolute w-[480px] h-[480px] rounded-full" style="animation:pulse-glow 4s ease-in-out infinite;"></div><!-- Vinyl record -->
+      <div class="relative vinyl w-[420px] h-[420px] rounded-full" style="background:radial-gradient(circle at center, #1a0a1f 30%, #0a0612 31%, #0a0612 35%, #1a0a1f 36%, #0a0612 40%, #1a0a1f 41%, #0a0612 45%, #1a0a1f 46%, #0a0612 50%, #1a0a1f 51%, #0a0612 55%, #1a0a1f 56%, #0a0612 62%, #1a0a1f 63%, #0a0612 68%, #1a0a1f 69%, #0a0612 74%, #1a0a1f 75%, #0a0612 82%, #1a0a1f 83%, #000 100%); box-shadow: 0 40px 80px rgba(0,0,0,0.6), inset 0 0 60px rgba(255,61,87,0.2);">
+       <!-- Center label -->
+       <div class="absolute inset-0 m-auto w-40 h-40 rounded-full flex items-center justify-center" style="background:conic-gradient(from 180deg, #ff3d57, #8a2be2, #ffa500, #ff3d57);">
+        <div class="w-32 h-32 rounded-full bg-[#0a0612] flex flex-col items-center justify-center">
+         <i data-lucide="music-4" class="w-8 h-8 text-[#ff3d57] mb-1"></i>
+         <div class="font-display font-bold text-sm">
+          Y2MATE
+         </div>
+         <div class="text-[9px] text-white/40 mt-1">
+          33 1/3 RPM
+         </div>
+        </div>
+       </div>
+       <div class="absolute inset-0 m-auto w-3 h-3 rounded-full bg-black"></div>
+      </div><!-- Floating cards -->
+      <div class="absolute top-0 right-0 glass rounded-2xl p-4 w-56" style="transform:rotate(8deg);">
+       <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff3d57] to-[#8a2be2] flex items-center justify-center">
+         <i data-lucide="check" class="w-5 h-5"></i>
+        </div>
+        <div>
+         <div class="text-xs font-semibold">
+          Download Complete
+         </div>
+         <div class="text-[10px] text-white/50">
+          music.mp3 · 320kbps
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="absolute bottom-4 left-0 glass rounded-2xl p-4 w-60" style="transform:rotate(-6deg);">
+       <div class="flex items-center gap-3 mb-2">
+        <i data-lucide="waveform" class="w-4 h-4 text-[#ff3d57]"></i>
+        <div class="text-xs font-semibold">
+         Converting...
+        </div>
+       </div>
+       <div class="h-1.5 bg-black/40 rounded-full overflow-hidden">
+        <div class="h-full w-2/3 bg-gradient-to-r from-[#ff3d57] to-[#ffa500] rounded-full"></div>
+       </div>
+       <div class="text-[10px] text-white/40 mt-1.5">
+        67% · 4.2 MB/s
+       </div>
+      </div>
+     </div>
+    </div><!-- Supported platforms marquee -->
+    <div class="relative border-t border-white/5 py-5 overflow-hidden">
+     <div class="flex whitespace-nowrap marquee-track">
+      <div class="flex items-center gap-12 pr-12 text-white/30 text-sm font-medium">
+       <span class="flex items-center gap-2"><i data-lucide="youtube" class="w-5 h-5"></i> YouTube</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="facebook" class="w-5 h-5"></i> Facebook</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="music" class="w-5 h-5"></i> TikTok</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="instagram" class="w-5 h-5"></i> Instagram</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="twitter" class="w-5 h-5"></i> Twitter</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="twitch" class="w-5 h-5"></i> Twitch</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="youtube" class="w-5 h-5"></i> YouTube</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="facebook" class="w-5 h-5"></i> Facebook</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="music" class="w-5 h-5"></i> TikTok</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="instagram" class="w-5 h-5"></i> Instagram</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="twitter" class="w-5 h-5"></i> Twitter</span> <span>•</span> <span class="flex items-center gap-2"><i data-lucide="twitch" class="w-5 h-5"></i> Twitch</span> <span>•</span>
+      </div>
+     </div>
+    </div>
+   </section><!-- ===== TRENDING ===== -->
+   <section id="trending" class="relative py-24 bg-[#0a0612]">
+    <div class="max-w-7xl mx-auto px-6">
+     <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+      <div>
+       <div class="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#ff3d57] font-semibold mb-3">
+        <i data-lucide="flame" class="w-4 h-4"></i> Hot right now
+       </div>
+       <h2 id="trendingHeading" class="font-display text-4xl md:text-5xl font-bold">Trending Tracks</h2>
+      </div>
+      <div class="flex items-center gap-2 text-sm text-white/50">
+       <i data-lucide="trending-up" class="w-4 h-4"></i> Updated every hour
+      </div>
+     </div>
+     <div id="trackGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"></div>
+    </div>
+   </section><!-- ===== FEATURES ===== -->
+   <section id="features" class="relative py-24 bg-gradient-to-b from-[#0a0612] to-[#13081f]">
+    <div class="max-w-7xl mx-auto px-6">
+     <div class="text-center mb-16">
+      <div class="text-xs uppercase tracking-[0.3em] text-[#ff3d57] font-semibold mb-3">
+       Why Y2Mate
+      </div>
+      <h2 class="font-display text-4xl md:text-5xl font-bold max-w-3xl mx-auto">Built for speed, designed for <span class="italic font-light">everyone</span></h2>
+     </div>
+     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="feature-box rounded-3xl p-7">
+       <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff3d57] to-[#ff6b3d] flex items-center justify-center mb-5 shadow-lg shadow-pink-500/30">
+        <i data-lucide="zap" class="w-6 h-6"></i>
+       </div>
+       <h3 class="font-display font-bold text-xl mb-2">Lightning Fast</h3>
+       <p class="text-sm text-white/60 leading-relaxed">Convert a full HD video in under 5 seconds. Powered by optimized cloud servers.</p>
+      </div>
+      <div class="feature-box rounded-3xl p-7">
+       <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8a2be2] to-[#ff3d57] flex items-center justify-center mb-5 shadow-lg shadow-purple-500/30">
+        <i data-lucide="gauge" class="w-6 h-6"></i>
+       </div>
+       <h3 class="font-display font-bold text-xl mb-2">4K Quality</h3>
+       <p class="text-sm text-white/60 leading-relaxed">Download videos up to 4K resolution and audio up to 320kbps — studio grade.</p>
+      </div>
+      <div class="feature-box rounded-3xl p-7">
+       <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ffa500] to-[#ff3d57] flex items-center justify-center mb-5 shadow-lg shadow-orange-500/30">
+        <i data-lucide="shield-check" class="w-6 h-6"></i>
+       </div>
+       <h3 class="font-display font-bold text-xl mb-2">Safe &amp; Private</h3>
+       <p class="text-sm text-white/60 leading-relaxed">No registration needed. We never track or store your downloads. Zero ads.</p>
+      </div>
+      <div class="feature-box rounded-3xl p-7">
+       <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00e5ff] to-[#8a2be2] flex items-center justify-center mb-5 shadow-lg shadow-cyan-500/30">
+        <i data-lucide="smartphone" class="w-6 h-6"></i>
+       </div>
+       <h3 class="font-display font-bold text-xl mb-2">Any Device</h3>
+       <p class="text-sm text-white/60 leading-relaxed">Works on iPhone, Android, Mac, PC, and tablets. No app install required.</p>
+      </div>
+     </div>
+    </div>
+   </section><!-- ===== CAPABILITIES ===== -->
+   <section class="relative py-24 bg-[#0a0612]">
+    <div class="max-w-7xl mx-auto px-6">
+     <div class="text-center mb-16">
+      <div class="text-xs uppercase tracking-[0.3em] text-[#ff3d57] font-semibold mb-3">
+       What You Can Do
+      </div>
+      <h2 class="font-display text-4xl md:text-5xl font-bold">Download from <span class="bg-gradient-to-r from-[#ff3d57] to-[#ffa500] bg-clip-text text-transparent">anywhere</span></h2>
+     </div>
+     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="group glass rounded-2xl p-7 hover:border-[#ff3d57]/40 transition cursor-pointer">
+       <div class="flex items-start justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-red-600/50 transition"><i data-lucide="youtube" class="w-6 h-6"></i>
+        </div>
+        <div class="text-xs px-2 py-1 rounded-lg bg-green-500/20 text-green-300 font-semibold">
+         Works Great
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-lg mb-2">YouTube Videos</h3>
+       <p class="text-sm text-white/60 mb-4">Extract audio as MP3 or download full video in MP4. Supports playlists and all quality levels up to 4K.</p>
+       <div class="text-xs text-white/40 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-400"></i> Subtitles included
+       </div>
+      </div>
+      <div class="group glass rounded-2xl p-7 hover:border-[#ff3d57]/40 transition cursor-pointer">
+       <div class="flex items-start justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-blue-600/50 transition"><i data-lucide="facebook" class="w-6 h-6"></i>
+        </div>
+        <div class="text-xs px-2 py-1 rounded-lg bg-green-500/20 text-green-300 font-semibold">
+         Works Great
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-lg mb-2">Facebook Videos</h3>
+       <p class="text-sm text-white/60 mb-4">Download videos, reels, and stories from Facebook and Messenger in high quality.</p>
+       <div class="text-xs text-white/40 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-400"></i> Keep audio &amp; video
+       </div>
+      </div>
+      <div class="group glass rounded-2xl p-7 hover:border-[#ff3d57]/40 transition cursor-pointer">
+       <div class="flex items-start justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-black to-gray-800 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-gray-600/50 transition"><i data-lucide="music" class="w-6 h-6"></i>
+        </div>
+        <div class="text-xs px-2 py-1 rounded-lg bg-green-500/20 text-green-300 font-semibold">
+         Works Great
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-lg mb-2">TikTok Videos</h3>
+       <p class="text-sm text-white/60 mb-4">Save TikToks without watermarks. Download as MP4 with original sound or as MP3 audio only.</p>
+       <div class="text-xs text-white/40 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-400"></i> No watermark
+       </div>
+      </div>
+      <div class="group glass rounded-2xl p-7 hover:border-[#ff3d57]/40 transition cursor-pointer">
+       <div class="flex items-start justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-600 to-pink-700 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-pink-600/50 transition"><i data-lucide="instagram" class="w-6 h-6"></i>
+        </div>
+        <div class="text-xs px-2 py-1 rounded-lg bg-green-500/20 text-green-300 font-semibold">
+         Works Great
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-lg mb-2">Instagram Content</h3>
+       <p class="text-sm text-white/60 mb-4">Download reels, stories, and posts from Instagram. Save photos and videos instantly.</p>
+       <div class="text-xs text-white/40 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-400"></i> Original quality
+       </div>
+      </div>
+      <div class="group glass rounded-2xl p-7 hover:border-[#ff3d57]/40 transition cursor-pointer">
+       <div class="flex items-start justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-600/50 transition"><i data-lucide="twitch" class="w-6 h-6"></i>
+        </div>
+        <div class="text-xs px-2 py-1 rounded-lg bg-green-500/20 text-green-300 font-semibold">
+         Works Great
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-lg mb-2">Twitch Clips</h3>
+       <p class="text-sm text-white/60 mb-4">Archive your favorite Twitch moments and streams. Download VODs and clips in one click.</p>
+       <div class="text-xs text-white/40 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-400"></i> Full quality
+       </div>
+      </div>
+     </div>
+    </div>
+   </section><!-- ===== HOW IT WORKS ===== -->
+   <section id="how" class="relative py-24 bg-[#13081f] overflow-hidden">
+    <div class="absolute inset-0 grid-pattern opacity-50"></div>
+    <div class="relative max-w-7xl mx-auto px-6">
+     <div class="text-center mb-16">
+      <div class="text-xs uppercase tracking-[0.3em] text-[#ff3d57] font-semibold mb-3">
+       3 Simple Steps
+      </div>
+      <h2 class="font-display text-4xl md:text-5xl font-bold">Download in <span class="bg-gradient-to-r from-[#ff3d57] to-[#ffa500] bg-clip-text text-transparent">seconds</span></h2>
+     </div>
+     <div class="grid md:grid-cols-3 gap-8 relative">
+      <!-- connecting line -->
+      <div class="hidden md:block absolute top-20 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+      <div class="relative text-center">
+       <div class="relative inline-flex items-center justify-center w-40 h-40 mx-auto mb-6">
+        <div class="absolute inset-0 rounded-full bg-gradient-to-br from-[#ff3d57] to-[#8a2be2] opacity-20 blur-2xl"></div>
+        <div class="relative w-36 h-36 rounded-full glass flex items-center justify-center">
+         <i data-lucide="clipboard-paste" class="w-12 h-12 text-[#ff3d57]"></i>
+        </div>
+        <div class="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-[#ff3d57] to-[#ff6b3d] flex items-center justify-center font-display font-bold text-lg shadow-lg">
+         1
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-2xl mb-2">Paste the link</h3>
+       <p class="text-white/60 text-sm max-w-xs mx-auto">Copy the URL from YouTube, Facebook, or TikTok and paste it into the converter.</p>
+      </div>
+      <div class="relative text-center">
+       <div class="relative inline-flex items-center justify-center w-40 h-40 mx-auto mb-6">
+        <div class="absolute inset-0 rounded-full bg-gradient-to-br from-[#8a2be2] to-[#ffa500] opacity-20 blur-2xl"></div>
+        <div class="relative w-36 h-36 rounded-full glass flex items-center justify-center">
+         <i data-lucide="settings-2" class="w-12 h-12 text-[#8a2be2]"></i>
+        </div>
+        <div class="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-[#8a2be2] to-[#ff3d57] flex items-center justify-center font-display font-bold text-lg shadow-lg">
+         2
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-2xl mb-2">Pick format</h3>
+       <p class="text-white/60 text-sm max-w-xs mx-auto">Choose MP3 for audio or MP4 for video, then select your preferred quality.</p>
+      </div>
+      <div class="relative text-center">
+       <div class="relative inline-flex items-center justify-center w-40 h-40 mx-auto mb-6">
+        <div class="absolute inset-0 rounded-full bg-gradient-to-br from-[#ffa500] to-[#ff3d57] opacity-20 blur-2xl"></div>
+        <div class="relative w-36 h-36 rounded-full glass flex items-center justify-center">
+         <i data-lucide="download" class="w-12 h-12 text-[#ffa500]"></i>
+        </div>
+        <div class="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-[#ffa500] to-[#ff3d57] flex items-center justify-center font-display font-bold text-lg shadow-lg">
+         3
+        </div>
+       </div>
+       <h3 class="font-display font-bold text-2xl mb-2">Download</h3>
+       <p class="text-white/60 text-sm max-w-xs mx-auto">Click download and enjoy your file instantly. No waiting, no hassle.</p>
+      </div>
+     </div>
+    </div>
+   </section><!-- ===== FOOTER ===== -->
+   <footer class="relative bg-[#0a0612] border-t border-white/5 py-12">
+    <div class="max-w-7xl mx-auto px-6">
+     <div class="grid md:grid-cols-4 gap-8 mb-10">
+      <div class="md:col-span-2">
+       <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff3d57] to-[#8a2be2] flex items-center justify-center">
+         <i data-lucide="play" class="w-4 h-4 fill-white"></i>
+        </div>
+        <div class="font-display font-bold text-lg">
+         Y2Mate
+        </div>
+       </div>
+       <p class="text-sm text-white/50 max-w-md leading-relaxed">The world's most loved YouTube downloader. Free, fast, and always improving. Join millions who trust Y2Mate for their daily conversions.</p>
+       <div class="flex gap-3 mt-5">
+        <a href="#" class="w-9 h-9 rounded-lg glass flex items-center justify-center hover:bg-white/10 transition"><i data-lucide="twitter" class="w-4 h-4"></i></a> <a href="#" class="w-9 h-9 rounded-lg glass flex items-center justify-center hover:bg-white/10 transition"><i data-lucide="instagram" class="w-4 h-4"></i></a> <a href="#" class="w-9 h-9 rounded-lg glass flex items-center justify-center hover:bg-white/10 transition"><i data-lucide="facebook" class="w-4 h-4"></i></a> <a href="#" class="w-9 h-9 rounded-lg glass flex items-center justify-center hover:bg-white/10 transition"><i data-lucide="github" class="w-4 h-4"></i></a>
+       </div>
+      </div>
+      <div>
+       <div class="font-display font-bold mb-4 text-sm uppercase tracking-wider">
+        Product
+       </div>
+       <ul class="space-y-2 text-sm text-white/60">
+        <li><a href="#" class="hover:text-white transition">YouTube to MP3</a></li>
+        <li><a href="#" class="hover:text-white transition">YouTube to MP4</a></li>
+        <li><a href="#" class="hover:text-white transition">TikTok Downloader</a></li>
+        <li><a href="#" class="hover:text-white transition">Instagram Reels</a></li>
+       </ul>
+      </div>
+      <div>
+       <div class="font-display font-bold mb-4 text-sm uppercase tracking-wider">
+        Company
+       </div>
+       <ul class="space-y-2 text-sm text-white/60">
+        <li><a href="#" class="hover:text-white transition">About</a></li>
+        <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
+        <li><a href="#" class="hover:text-white transition">Terms</a></li>
+        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+       </ul>
+      </div>
+     </div>
+     <div class="pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-white/40">
+      <div id="footerText">
+       © 2026 Y2Mate. All rights reserved. API v2.3.2
+      </div>
+      <div class="flex items-center gap-2">
+       <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> All systems operational
+      </div>
+     </div>
+    </div>
+   </footer>
+  </div><!-- Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-[100] pointer-events-none"></div><!-- Modal for converter -->
+  <div id="modal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+   <div class="relative w-full max-w-2xl glass rounded-3xl p-6 shadow-2xl" style="background:rgba(20,10,35,0.95);">
+    <button id="closeModal" class="absolute top-4 right-4 w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition"> <i data-lucide="x" class="w-4 h-4"></i> </button>
+    <div class="flex items-center gap-2 mb-4">
+     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff3d57] to-[#8a2be2] flex items-center justify-center">
+      <i data-lucide="download-cloud" class="w-5 h-5"></i>
+     </div>
+     <div>
+      <div class="font-display font-bold">
+       Your Download
+      </div>
+      <div class="text-xs text-white/50" id="modalSubtitle">
+       Preparing file...
+      </div>
+     </div>
+    </div>
+    <div id="modalContent" class="rounded-2xl overflow-hidden bg-black/30" style="min-height:420px;"></div>
+   </div>
+  </div>
+  <script>
+  // ===== Trending data =====
+  const tracks = [
+    { title: "Choosin' Texas", artist: "Ella Langley", color: "from-amber-500 to-red-600", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "Lose Control (Live)", artist: "Teddy Swims", color: "from-purple-600 to-pink-500", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "Billie Jean", artist: "Michael Jackson", color: "from-zinc-700 to-red-700", url: "https://www.youtube.com/watch?v=Zi_XLOBDo_Y" },
+    { title: "Ordinary", artist: "Alex Warren", color: "from-blue-700 to-indigo-900", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "PINKY UP", artist: "KATSEYE", color: "from-pink-400 to-fuchsia-600", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "Golden", artist: "HUNTR/X, EJAE", color: "from-yellow-400 to-orange-600", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "Babydoll", artist: "Dominic Fike", color: "from-rose-400 to-pink-700", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "Beat It", artist: "Michael Jackson", color: "from-red-600 to-zinc-900", url: "https://www.youtube.com/watch?v=oRdxUFDoQe0" },
+    { title: "Marlboro Rojo", artist: "Fuerza Regida", color: "from-red-700 to-amber-900", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { title: "Thriller", artist: "Michael Jackson", color: "from-orange-700 to-red-900", url: "https://www.youtube.com/watch?v=sOnqjkJTMaA" },
+  ];
+
+  function renderTracks() {
+    const grid = document.getElementById('trackGrid');
+    grid.innerHTML = tracks.map((t, i) => `
+      <div class="tilt-card reveal group cursor-pointer" style="animation-delay:${0.05 * i}s;" data-url="${t.url}" data-title="${t.title}" data-artist="${t.artist}">
+        <div class="relative aspect-square rounded-2xl overflow-hidden mb-3 shadow-xl">
+          <div class="absolute inset-0 bg-gradient-to-br ${t.color}"></div>
+          <div class="absolute inset-0 opacity-40" style="background-image:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), transparent 60%);"></div>
+          <!-- vinyl peeking -->
+          <div class="absolute -right-10 -bottom-10 w-32 h-32 rounded-full border-4 border-black/60 vinyl" style="background:repeating-radial-gradient(circle at center, #000 0 3px, #1a1a1a 3px 6px);">
+            <div class="absolute inset-0 m-auto w-8 h-8 rounded-full bg-gradient-to-br from-white to-white/50"></div>
+          </div>
+          <!-- track number -->
+          <div class="absolute top-3 left-3 font-display font-black text-5xl text-white/20 leading-none">${String(i+1).padStart(2,'0')}</div>
+          <!-- play button -->
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 bg-black/40">
+            <div class="relative">
+              <div class="absolute inset-0 rounded-full bg-white play-ping"></div>
+              <div class="relative w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-2xl">
+                <i data-lucide="download" class="w-5 h-5 text-black"></i>
+              </div>
+            </div>
+          </div>
+          <!-- rank badge -->
+          <div class="absolute top-3 right-3 glass rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3 text-green-400"></i> #${i+1}
+          </div>
+        </div>
+        <div class="px-1">
+          <div class="font-semibold text-sm truncate group-hover:text-[#ff3d57] transition">${t.title}</div>
+          <div class="text-xs text-white/50 truncate">${t.artist}</div>
+        </div>
+      </div>
+    `).join('');
+    lucide.createIcons();
+
+    grid.querySelectorAll('[data-url]').forEach(el => {
+      el.addEventListener('click', () => openConverter(el.dataset.url, el.dataset.title, el.dataset.artist));
+    });
+  }
+
+  // ===== Converter modal =====
+  let currentFormat = 'mp3';
+  function openConverter(url, title, artist) {
+    const modal = document.getElementById('modal');
+    const content = document.getElementById('modalContent');
+    document.getElementById('modalSubtitle').textContent = `${title} · ${artist}`;
+    content.innerHTML = `<iframe src="https://clickapi.net/api/widgetplus?url=${encodeURIComponent(url)}&theme=dark" width="100%" height="420" allowtransparency="true" scrolling="no" style="border:none;display:block;"></iframe>`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    lucide.createIcons();
+  }
+
+  document.getElementById('closeModal').addEventListener('click', () => {
+    const modal = document.getElementById('modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  });
+
+  document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') {
+      const modal = document.getElementById('modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  });
+
+  // Format tabs
+  document.querySelectorAll('.format-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.format-tab').forEach(b => {
+        b.classList.remove('tab-active');
+        b.classList.add('text-white/60');
+      });
+      btn.classList.add('tab-active');
+      btn.classList.remove('text-white/60');
+      currentFormat = btn.dataset.format;
+    });
+  });
+
+  // Toast
+  function toast(msg, type='info') {
+    const el = document.createElement('div');
+    const colors = { info: 'from-[#ff3d57] to-[#ff6b3d]', error: 'from-red-500 to-rose-600', success: 'from-green-500 to-emerald-600' };
+    el.className = `glass rounded-xl px-5 py-3 text-sm font-medium shadow-2xl mb-2 flex items-center gap-2 bg-gradient-to-r ${colors[type]}`;
+    el.style.animation = 'reveal 0.4s ease';
+    el.innerHTML = `<i data-lucide="${type==='error'?'alert-circle':'check-circle'}" class="w-4 h-4"></i> ${msg}`;
+    document.getElementById('toast').appendChild(el);
+    lucide.createIcons();
+    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; el.style.transition = '0.3s'; }, 2500);
+    setTimeout(() => el.remove(), 2900);
+  }
+
+  // Convert button
+  document.getElementById('convertBtn').addEventListener('click', () => {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) { toast('Please paste a video URL first', 'error'); return; }
+    if (!/youtube\.com|youtu\.be|facebook\.com|tiktok\.com/i.test(url)) {
+      toast('Please enter a valid YouTube, Facebook, or TikTok URL', 'error'); return;
+    }
+    openConverter(url, 'Your video', 'Converting to ' + currentFormat.toUpperCase());
+  });
+
+  document.getElementById('urlInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('convertBtn').click();
+  });
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const t = document.querySelector(a.getAttribute('href'));
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+
+  // Init
+  renderTracks();
+  lucide.createIcons();
+
+  // ===== Element SDK =====
+  const defaultConfig = {
+    site_title: "Y2Mate",
+    site_tagline: "YouTube Downloader",
+    hero_heading: "Convert anything into MP3 · MP4",
+    hero_description: "The fastest free YouTube, Facebook, and TikTok downloader. High-quality audio and video conversion in seconds — no signup, no limits.",
+    trending_heading: "Trending Tracks",
+    footer_text: "© 2026 Y2Mate. All rights reserved. API v2.3.2"
+  };
+
+  if (window.elementSdk) {
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => {
+        document.getElementById('siteTitle').textContent = config.site_title || defaultConfig.site_title;
+        document.getElementById('siteTagline').textContent = config.site_tagline || defaultConfig.site_tagline;
+        // Hero heading: keep styled version if default, else use plain text
+        const heroEl = document.getElementById('heroHeading');
+        const heading = config.hero_heading || defaultConfig.hero_heading;
+        if (heading === defaultConfig.hero_heading) {
+          heroEl.innerHTML = `Convert <span class="bg-gradient-to-r from-[#ff3d57] via-[#ff6b3d] to-[#ffa500] bg-clip-text text-transparent">anything</span><br>into <span class="italic font-light">MP3 · MP4</span>`;
+        } else {
+          heroEl.textContent = heading;
+        }
+        document.getElementById('heroDescription').textContent = config.hero_description || defaultConfig.hero_description;
+        document.getElementById('trendingHeading').textContent = config.trending_heading || defaultConfig.trending_heading;
+        document.getElementById('footerText').textContent = config.footer_text || defaultConfig.footer_text;
+      },
+      mapToCapabilities: () => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
+      mapToEditPanelValues: (config) => new Map([
+        ["site_title", config.site_title || defaultConfig.site_title],
+        ["site_tagline", config.site_tagline || defaultConfig.site_tagline],
+        ["hero_heading", config.hero_heading || defaultConfig.hero_heading],
+        ["hero_description", config.hero_description || defaultConfig.hero_description],
+        ["trending_heading", config.trending_heading || defaultConfig.trending_heading],
+        ["footer_text", config.footer_text || defaultConfig.footer_text]
+      ])
+    });
+  }
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f6a88b5a7d5a857',t:'MTc3NzkyOTQ2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
