@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2Mate - Free YouTube to MP3 & MP4 Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        header {
+            padding: 1.5rem 0;
+            background: rgba(15, 12, 41, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f, #f06595);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        nav a {
+            color: #a0a0b0;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #ff6b6b;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                display: none;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 4rem 0;
+            position: relative;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(15, 12, 41, 0.3);
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f, #f06595, #c92a7a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: #b0b0c0;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .converter-box {
+            background: rgba(48, 43, 99, 0.5);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            backdrop-filter: blur(15px);
+            max-width: 700px;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e0e0f0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1.2rem 1.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(255, 107, 107, 0.4);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #ff6b6b;
+            box-shadow: 0 0 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .input-group input::placeholder {
+            color: #7a7a90;
+        }
+
+        .quality-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quality-option {
+            position: relative;
+        }
+
+        .quality-option input {
+            display: none;
+        }
+
+        .quality-label {
+            display: block;
+            padding: 1.2rem;
+            border: 2px solid rgba(255, 107, 107, 0.2);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .quality-option input:checked + .quality-label {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.15);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .quality-label h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.3rem;
+            color: #e0e0f0;
+        }
+
+        .quality-label p {
+            font-size: 0.85rem;
+            color: #a0a0b0;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .quality-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: left 0.3s ease;
+            z-index: 0;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #c92a7a 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+            position: relative;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff9e9e;
+            border: 2px solid #ff6b6b;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 107, 107, 0.35);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: #a0a0b0;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: rgba(48, 43, 99, 0.4);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feature-card:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.08);
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #e0e0f0;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #a0a0b0;
+            line-height: 1.6;
+        }
+
+        .trending-section {
+            background: rgba(48, 43, 99, 0.3);
+            border-top: 2px solid rgba(255, 107, 107, 0.2);
+            border-bottom: 2px solid rgba(255, 107, 107, 0.2);
+            padding: 4rem 0;
+        }
+
+        .trending-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: #e0e0f0;
+        }
+
+        .trending-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .trending-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .trending-item:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+            transform: translateY(-5px);
+        }
+
+        .trending-item .title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #ff9e9e;
+        }
+
+        .trending-item .artist {
+            font-size: 0.9rem;
+            color: #a0a0b0;
+        }
+
+        .how-it-works {
+            background: rgba(15, 12, 41, 0.5);
+            padding: 4rem 0;
+        }
+
+        .how-it-works h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: #e0e0f0;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .step-card {
+            position: relative;
+            padding-left: 4rem;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3rem;
+            height: 3rem;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .step-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            color: #e0e0f0;
+        }
+
+        .step-card p {
+            font-size: 0.95rem;
+            color: #a0a0b0;
+            line-height: 1.6;
+        }
+
+        .formats-section {
+            background: rgba(48, 43, 99, 0.3);
+            border-top: 2px solid rgba(255, 107, 107, 0.2);
+            padding: 4rem 0;
+        }
+
+        .formats-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: #e0e0f0;
+        }
+
+        .format-showcase {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .format-showcase {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .format-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .format-box:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+            transform: translateY(-10px);
+            box-shadow: 0 10px 40px rgba(255, 107, 107, 0.2);
+        }
+
+        .format-box h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #ff9e9e;
+        }
+
+        .format-box p {
+            color: #a0a0b0;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .format-details {
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: left;
+        }
+
+        .format-details ul {
+            list-style: none;
+        }
+
+        .format-details li {
+            padding: 0.5rem 0;
+            color: #a0a0b0;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .format-details li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .faq-section {
+            background: rgba(15, 12, 41, 0.5);
+            padding: 4rem 0;
+        }
+
+        .faq-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: #e0e0f0;
+        }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: rgba(48, 43, 99, 0.4);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.08);
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #e0e0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .faq-question:hover {
+            color: #ff9e9e;
+        }
+
+        .faq-toggle {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+            color: #ff6b6b;
+        }
+
+        .faq-item.active .faq-toggle {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.5rem;
+            color: #a0a0b0;
+            line-height: 1.6;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+
+        footer {
+            background: rgba(15, 12, 41, 0.95);
+            border-top: 2px solid rgba(255, 107, 107, 0.2);
+            padding: 3rem 0 1.5rem;
+            color: #a0a0b0;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        .footer-section h4 {
+            color: #e0e0f0;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .footer-section a {
+            color: #a0a0b0;
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem 0;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #ff6b6b;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding: 1rem 0;
+            color: #7a7a90;
+            font-size: 0.85rem;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 107, 107, 0.3);
+            border-top: 3px solid #ff6b6b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+        }
+
+        .status-message.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .status-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+
+        .quality-section {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(238, 90, 111, 0.05));
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+
+        .quality-section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #e0e0f0;
+        }
+
+        .quality-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .quality-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .quality-item:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+        }
+
+        .quality-item strong {
+            display: block;
+            color: #ff9e9e;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quality-item span {
+            color: #a0a0b0;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            text-transform: uppercase;
+        }
+
+        .tip-box {
+            background: rgba(255, 107, 107, 0.15);
+            border-left: 4px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tip-box strong {
+            color: #ff9e9e;
+        }
+
+        .tip-box p {
+            color: #a0a0b0;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+
+            section {
+                padding: 2rem 0;
+            }
+
+            header .container {
+                padding: 0 1.5rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="wrapper">
+        <header>
+            <div class="container">
+                <a href="#" class="logo">Y2Mate</a>
+                <nav>
+                    <a href="#how">How it works</a>
+                    <a href="#formats">Formats</a>
+                    <a href="#faq">FAQ</a>
+                </nav>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Download YouTube Videos Instantly</h1>
+                    <p>Convert and download YouTube videos to MP3 & MP4 in seconds. Free, fast, and no registration required.</p>
+
+                    <div class="converter-box">
+                        <div class="input-group">
+                            <label for="videoUrl">Paste YouTube URL</label>
+                            <input 
+                                type="text" 
+                                id="videoUrl" 
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="input-group">
+                            <label>Select Format</label>
+                            <div class="quality-selector">
+                                <div class="quality-option">
+                                    <input type="radio" name="format" id="format-mp3" value="mp3" checked>
+                                    <label for="format-mp3" class="quality-label">
+                                        <h3>🎵 MP3</h3>
+                                        <p>Audio Only</p>
+                                    </label>
+                                </div>
+                                <div class="quality-option">
+                                    <input type="radio" name="format" id="format-mp4" value="mp4">
+                                    <label for="format-mp4" class="quality-label">
+                                        <h3>🎬 MP4</h3>
+                                        <p>Video + Audio</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="convertBtn">Convert Now</button>
+                            <button class="btn btn-secondary" id="resetBtn">Clear</button>
+                        </div>
+
+                        <div class="loader" id="loader">
+                            <div class="spinner"></div>
+                            <p style="margin-top: 1rem; color: #a0a0b0;">Processing your video...</p>
+                        </div>
+
+                        <div class="status-message" id="statusMessage"></div>
+
+                        <p class="info-text">
+                            💡 Pro Tip: Add "sos" before "youtube" in the URL (sosyoutube.com) for faster downloads
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container" style="padding: 4rem 0;">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Convert videos in seconds with our optimized servers. No waiting, instant results.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% Secure</h3>
+                    <p>Your data is never stored or shared. Complete privacy with advanced encryption.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>All Devices</h3>
+                    <p>Works on desktop, tablet, and mobile phones. Fully responsive design.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <h3>High Quality</h3>
+                    <p>Download in the best available quality. MP3 up to 320kbps, MP4 up to 1080p.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="trending-section">
+            <div class="container">
+                <h2>Currently Trending</h2>
+                <div class="trending-grid">
+                    <div class="trending-item">
+                        <div class="title">Choosin' Texas</div>
+                        <div class="artist">Ella Langley</div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="title">Lose Control (Live)</div>
+                        <div class="artist">Teddy Swims</div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="title">Billie Jean</div>
+                        <div class="artist">Michael Jackson</div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="title">Ordinary</div>
+                        <div class="artist">Alex Warren</div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="title">PINKY UP</div>
+                        <div class="artist">KATSEYE</div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="title">Babydoll</div>
+                        <div class="artist">Dominic Fike</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works" id="how">
+            <div class="container">
+                <h2>How It Works</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Copy URL</h3>
+                        <p>Find the YouTube video you want to download. Copy the URL from the address bar.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Paste & Choose</h3>
+                        <p>Paste the URL into Y2Mate. Select your preferred format (MP3 or MP4).</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>Convert</h3>
+                        <p>Click the convert button and wait seconds for the conversion to complete.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h3>Download</h3>
+                        <p>Download your file directly to your device. Enjoy offline anytime, anywhere.</p>
+                    </div>
+                </div>
+
+                <div class="tip-box">
+                    <strong>⚡ Speed Hack:</strong>
+                    <p>Replace "youtube.com" with "sosyoutube.com" in your URL before pasting. This activates our fastest conversion mode!</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="formats-section" id="formats">
+            <div class="container">
+                <h2>Supported Formats</h2>
+                
+                <div class="quality-section">
+                    <h3>MP3 Audio Format</h3>
+                    <p style="color: #a0a0b0; margin-bottom: 1.5rem;">Extract audio from YouTube videos. Perfect for music lovers and podcasts.</p>
+                    <div class="quality-list">
+                        <div class="quality-item">
+                            <strong>128 kbps</strong>
+                            <span>Good Quality</span>
+                        </div>
+                        <div class="quality-item">
+                            <strong>192 kbps</strong>
+                            <span>Better Quality</span>
+                        </div>
+                        <div class="quality-item">
+                            <strong>256 kbps</strong>
+                            <span>High Quality</span>
+                        </div>
+                        <div class="quality-item">
+                            <strong>320 kbps</strong>
+                            <span>Best Quality</span>
+                        </div>
+                    </div>
+                    <div class="badge">Up to 4 hours per file</div>
+                </div>
+
+                <div class="quality-section" style="margin-top: 2rem;">
+                    <h3>MP4 Video Format</h3>
+                    <p style="color: #a0a0b0; margin-bottom: 1.5rem;">Download complete videos with audio. Store your favorite content offline.</p>
+                    <div class="quality-list">
+                        <div class="quality-item">
+                            <strong>360p</strong>
+                            <span>Mobile Friendly</span>
+                        </div>
+                        <div class="quality-item">
+                            <strong>480p</strong>
+                            <span>Standard</span>
+                        </div>
+                        <div class="quality-item">
+                            <strong>720p</strong>
+                            <span>HD Quality</span>
+                        </div>
+                        <div class="quality-item">
+                            <strong>1080p</strong>
+                            <span>Full HD</span>
+                        </div>
+                    </div>
+                    <div class="badge">Up to 30 minutes per file</div>
+                </div>
+
+                <div class="format-showcase" style="margin-top: 3rem;">
+                    <div class="format-box">
+                        <h3>🎵 MP3</h3>
+                        <p>Audio-only downloads for music and podcasts</p>
+                        <div class="format-details">
+                            <ul>
+                                <li>Fast conversion</li>
+                                <li>Small file size</li>
+                                <li>High quality audio</li>
+                                <li>No video included</li>
+                                <li>Max 4 hours</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="format-box">
+                        <h3>🎬 MP4</h3>
+                        <p>Full video downloads with audio</p>
+                        <div class="format-details">
+                            <ul>
+                                <li>Complete video</li>
+                                <li>Multiple resolutions</li>
+                                <li>Audio included</li>
+                                <li>Works everywhere</li>
+                                <li>Max 30 minutes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq-section" id="faq">
+            <div class="container">
+                <h2>Frequently Asked Questions</h2>
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>What formats can I download using Y2Mate?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            Y2Mate lets you download videos in MP3 and MP4 formats. For MP3, you can choose from 128kbps to 320kbps quality. MP4 videos can be downloaded in resolutions from 360p to 1080p HD, giving you complete flexibility based on your needs.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>Do I need to create an account to use Y2Mate?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            No, you don't need to sign up or create an account. Y2Mate is completely free and ready to use right away. No registration, no email verification, no hidden fees. Just paste your link and download!
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>Is Y2Mate safe to use?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            Yes, Y2Mate is completely safe. We use advanced security protocols to ensure your data is protected. We don't store your downloads or personal information. Your privacy is our priority.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>How fast is the conversion process?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            Y2Mate's conversion is extremely fast, typically completing within seconds. For the fastest experience, use our "SOS" shortcut by replacing "youtube.com" with "sosyoutube.com" in your URL.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>Are there any limitations on the number of conversions?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            No, there are absolutely no limits! You can download as many videos as you want without any restrictions. Enjoy unlimited conversions, completely free.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>Can I save downloads to cloud storage?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            Yes! You can save your downloads directly to Google Drive or Dropbox for easy access. This makes managing and sharing your downloads incredibly convenient.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>What's the maximum file size I can download?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            MP3 downloads can be up to 4 hours at 192kbps quality. MP4 downloads support up to 30 minutes at 360p resolution. These limits ensure optimal conversion speed and quality.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>Which browsers are supported?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            Y2Mate works on all modern browsers including Chrome, Firefox, Safari, and Edge. It's fully responsive and works perfectly on mobile, tablet, and desktop devices.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4>About</h4>
+                        <a href="#">About Us</a>
+                        <a href="#">Contact</a>
+                        <a href="#">Blog</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Legal</h4>
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Use</a>
+                        <a href="#">Copyright Claims</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <a href="#">FAQ</a>
+                        <a href="#">Help Center</a>
+                        <a href="#">Contact Us</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Follow Us</h4>
+                        <a href="#">Twitter</a>
+                        <a href="#">Facebook</a>
+                        <a href="#">Instagram</a>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>© Copyright 2009-2025 Y2Mate. All Rights Reserved. | Made with ❤️ for YouTube Lovers</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let scene, camera, renderer;
+        let particles = [];
+        let mouse = { x: 0, y: 0 };
+        let targetRotation = { x: 0, y: 0 };
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('canvas'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x0f0c29, 1);
+
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xff6b6b,
+                emissive: 0x6b2020,
+                wireframe: false,
+                shininess: 100
+            });
+
+            for (let i = 0; i < 10; i++) {
+                const cube = new THREE.Mesh(geometry, material.clone());
+                cube.position.set(
+                    (Math.random() - 0.5) * 80,
+                    (Math.random() - 0.5) * 60,
+                    (Math.random() - 0.5) * 40
+                );
+                cube.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                cube.scale.set(
+                    Math.random() * 1.5 + 0.5,
+                    Math.random() * 1.5 + 0.5,
+                    Math.random() * 1.5 + 0.5
+                );
+                cube.velocity = {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02,
+                    rotX: (Math.random() - 0.5) * 0.005,
+                    rotY: (Math.random() - 0.5) * 0.005,
+                    rotZ: (Math.random() - 0.5) * 0.005
+                };
+                scene.add(cube);
+                particles.push(cube);
+            }
+
+            const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+            const sphereMaterial = new THREE.MeshPhongMaterial({
+                color: 0xee5a6f,
+                emissive: 0x6b2020,
+                shininess: 80
+            });
+
+            for (let i = 0; i < 6; i++) {
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial.clone());
+                sphere.position.set(
+                    (Math.random() - 0.5) * 80,
+                    (Math.random() - 0.5) * 60,
+                    (Math.random() - 0.5) * 40
+                );
+                sphere.scale.set(
+                    Math.random() * 1.2 + 0.6,
+                    Math.random() * 1.2 + 0.6,
+                    Math.random() * 1.2 + 0.6
+                );
+                sphere.velocity = {
+                    x: (Math.random() - 0.5) * 0.015,
+                    y: (Math.random() - 0.5) * 0.015,
+                    z: (Math.random() - 0.5) * 0.015,
+                    rotX: (Math.random() - 0.5) * 0.003,
+                    rotY: (Math.random() - 0.5) * 0.003,
+                    rotZ: (Math.random() - 0.5) * 0.003
+                };
+                scene.add(sphere);
+                particles.push(sphere);
+            }
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            directionalLight.position.set(10, 10, 20);
+            scene.add(directionalLight);
+
+            const pointLight1 = new THREE.PointLight(0xff6b6b, 1.2, 100);
+            pointLight1.position.set(20, 20, 20);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0xee5a6f, 0.9, 80);
+            pointLight2.position.set(-20, -20, 20);
+            scene.add(pointLight2);
+
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('mousemove', onMouseMove);
+
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            targetRotation.x = mouse.y * 0.3;
+            targetRotation.y = mouse.x * 0.3;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particles.forEach(particle => {
+                particle.position.x += particle.velocity.x;
+                particle.position.y += particle.velocity.y;
+                particle.position.z += particle.velocity.z;
+
+                particle.rotation.x += particle.velocity.rotX;
+                particle.rotation.y += particle.velocity.rotY;
+                particle.rotation.z += particle.velocity.rotZ;
+
+                if (Math.abs(particle.position.x) > 40) particle.velocity.x *= -1;
+                if (Math.abs(particle.position.y) > 30) particle.velocity.y *= -1;
+                if (Math.abs(particle.position.z) > 20) particle.velocity.z *= -1;
+            });
+
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.05;
+            camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.05;
+
+            renderer.render(scene, camera);
+        }
+
+        // ===== CONVERTER FUNCTIONALITY =====
+        const videoUrlInput = document.getElementById('videoUrl');
+        const convertBtn = document.getElementById('convertBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loader = document.getElementById('loader');
+        const statusMessage = document.getElementById('statusMessage');
+
+        function validateYouTubeUrl(url) {
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie|sosyoutube)\.(com|be)\//;
+            return youtubeRegex.test(url);
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            setTimeout(() => {
+                statusMessage.className = 'status-message';
+            }, 4000);
+        }
+
+        convertBtn.addEventListener('click', () => {
+            const url = videoUrlInput.value.trim();
+            const format = document.querySelector('input[name="format"]:checked').value;
+
+            if (!url) {
+                showStatus('Please enter a YouTube URL', 'error');
+                return;
+            }
+
+            if (!validateYouTubeUrl(url)) {
+                showStatus('Please enter a valid YouTube URL', 'error');
+                return;
+            }
+
+            loader.classList.add('active');
+            convertBtn.disabled = true;
+
+            setTimeout(() => {
+                const clickApiUrl = `https://clickapi.net/api/single/${format}?url=${encodeURIComponent(url)}`;
+                window.open(clickApiUrl, '_blank');
+                
+                loader.classList.remove('active');
+                convertBtn.disabled = false;
+                showStatus(`Opening converter for ${format.toUpperCase()}...`, 'success');
+            }, 1500);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            videoUrlInput.value = '';
+            document.getElementById('format-mp3').checked = true;
+            statusMessage.className = 'status-message';
+            videoUrlInput.focus();
+        });
+
+        videoUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                convertBtn.click();
+            }
+        });
+
+        // FAQ Toggle
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', function() {
+                const faqItem = this.parentElement;
+                faqItem.classList.toggle('active');
+            });
+        });
+
+        window.addEventListener('load', initThreeJS);
+    </script>
+</body>
+</html>
