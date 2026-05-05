@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2Mate - YouTube to MP3 & MP4 Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        header {
+            padding: 1.5rem 0;
+            background: rgba(15, 12, 41, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 107, 107, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f, #f06595);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            letter-spacing: -1px;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: #a0a0b0;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: #ff6b6b;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                display: none;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 4rem 0;
+            position: relative;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(15, 12, 41, 0.2);
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f, #f06595, #c92a7a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: #b0b0c0;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .converter-box {
+            background: rgba(48, 43, 99, 0.6);
+            border: 2px solid rgba(255, 107, 107, 0.4);
+            border-radius: 20px;
+            padding: 2.5rem;
+            backdrop-filter: blur(15px);
+            max-width: 700px;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px 0 rgba(255, 107, 107, 0.2);
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #e0e0f0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1.2rem 1.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(255, 107, 107, 0.5);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #ff6b6b;
+            box-shadow: 0 0 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .input-group input::placeholder {
+            color: #7a7a90;
+        }
+
+        .quality-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quality-option input {
+            display: none;
+        }
+
+        .quality-label {
+            display: block;
+            padding: 1.2rem;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .quality-option input:checked + .quality-label {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+            transform: scale(1.05);
+        }
+
+        .quality-label h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.3rem;
+            color: #e0e0f0;
+            font-weight: 700;
+        }
+
+        .quality-label p {
+            font-size: 0.85rem;
+            color: #a0a0b0;
+        }
+
+        .quality-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quality-opt {
+            position: relative;
+        }
+
+        .quality-opt input {
+            display: none;
+        }
+
+        .quality-opt label {
+            display: block;
+            padding: 0.8rem;
+            border: 1.5px solid rgba(255, 107, 107, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            color: #a0a0b0;
+        }
+
+        .quality-opt input:checked + label {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.15);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .quality-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .quality-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            padding: 1.1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            transition: left 0.4s ease;
+            z-index: 0;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #c92a7a 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+            position: relative;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff9e9e;
+            border: 2px solid #ff6b6b;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 107, 107, 0.35);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: #a0a0b0;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 107, 107, 0.3);
+            border-top: 3px solid #ff6b6b;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 107, 107, 0.2);
+            border-radius: 10px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ee5a6f);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1.2rem;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+            animation: slideInUp 0.3s ease;
+        }
+
+        .status-message.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1.5px solid rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .status-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1.5px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+
+        .status-message.processing {
+            display: block;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1.5px solid rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: rgba(48, 43, 99, 0.5);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feature-card:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #e0e0f0;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #a0a0b0;
+            line-height: 1.6;
+        }
+
+        footer {
+            background: rgba(15, 12, 41, 0.95);
+            border-top: 2px solid rgba(255, 107, 107, 0.2);
+            padding: 3rem 0 1.5rem;
+            color: #a0a0b0;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        .footer-section h4 {
+            color: #e0e0f0;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .footer-section a {
+            color: #a0a0b0;
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem 0;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #ff6b6b;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding: 1rem 0;
+            color: #7a7a90;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+
+            section {
+                padding: 2rem 0;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="wrapper">
+        <header>
+            <div class="container">
+                <a href="#" class="logo">Y2Mate</a>
+                <nav>
+                    <a href="#features">Features</a>
+                    <a href="#how">How it works</a>
+                </nav>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Download YouTube Videos Instantly</h1>
+                    <p>🎵 Convert YouTube to MP3 & MP4 - Fast, Free, No Ads, No Registration</p>
+
+                    <div class="converter-box">
+                        <div class="input-group">
+                            <label for="videoUrl">📹 Paste YouTube URL</label>
+                            <input 
+                                type="text" 
+                                id="videoUrl" 
+                                placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="input-group">
+                            <label>Select Format</label>
+                            <div class="quality-selector">
+                                <div class="quality-option">
+                                    <input type="radio" name="format" id="format-mp3" value="mp3" checked>
+                                    <label for="format-mp3" class="quality-label">
+                                        <h3>🎵 MP3</h3>
+                                        <p>Audio Only</p>
+                                    </label>
+                                </div>
+                                <div class="quality-option">
+                                    <input type="radio" name="format" id="format-mp4" value="mp4">
+                                    <label for="format-mp4" class="quality-label">
+                                        <h3>🎬 MP4</h3>
+                                        <p>Full Video</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="qualityOptions" class="quality-options" style="display:none;">
+                            <div class="quality-opt">
+                                <input type="radio" name="quality" value="128" id="q128" checked>
+                                <label for="q128">128 kbps</label>
+                            </div>
+                            <div class="quality-opt">
+                                <input type="radio" name="quality" value="192" id="q192">
+                                <label for="q192">192 kbps</label>
+                            </div>
+                            <div class="quality-opt">
+                                <input type="radio" name="quality" value="256" id="q256">
+                                <label for="q256">256 kbps</label>
+                            </div>
+                            <div class="quality-opt">
+                                <input type="radio" name="quality" value="320" id="q320">
+                                <label for="q320">320 kbps</label>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="convertBtn">⚡ Convert & Download</button>
+                            <button class="btn btn-secondary" id="resetBtn">🔄 Clear</button>
+                        </div>
+
+                        <div class="loader" id="loader">
+                            <div class="spinner"></div>
+                            <p style="margin-top: 1rem; color: #a0a0b0;">Processing video...</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                        </div>
+
+                        <div class="status-message" id="statusMessage"></div>
+
+                        <p class="info-text">
+                            ✨ 100% Free • No Registration • Lightning Fast • Secure & Private
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container" id="features" style="padding: 4rem 0;">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Convert videos in seconds with optimized servers. Instant downloads without waiting.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% Secure</h3>
+                    <p>Your privacy is protected. No data stored, no tracking, completely anonymous downloads.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>All Devices</h3>
+                    <p>Works on mobile, tablet, and desktop. Fully responsive design for all screen sizes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <h3>High Quality</h3>
+                    <p>MP3 up to 320kbps • MP4 up to 1080p • Multiple quality options to choose from.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="container" id="how" style="padding: 4rem 0; background: rgba(48, 43, 99, 0.2); margin: 0; width: 100%;">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 3rem; text-align: center; color: #e0e0f0; font-weight: 800;">How It Works</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+                    <div style="position: relative; padding-left: 4rem;">
+                        <div style="position: absolute; left: 0; top: 0; width: 3rem; height: 3rem; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);">1</div>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 0.8rem; color: #e0e0f0; font-weight: 700;">Copy URL</h3>
+                        <p style="font-size: 0.95rem; color: #a0a0b0; line-height: 1.6;">Find any YouTube video and copy the URL from the address bar.</p>
+                    </div>
+
+                    <div style="position: relative; padding-left: 4rem;">
+                        <div style="position: absolute; left: 0; top: 0; width: 3rem; height: 3rem; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);">2</div>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 0.8rem; color: #e0e0f0; font-weight: 700;">Paste & Choose</h3>
+                        <p style="font-size: 0.95rem; color: #a0a0b0; line-height: 1.6;">Paste the URL and select your desired format (MP3 or MP4).</p>
+                    </div>
+
+                    <div style="position: relative; padding-left: 4rem;">
+                        <div style="position: absolute; left: 0; top: 0; width: 3rem; height: 3rem; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);">3</div>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 0.8rem; color: #e0e0f0; font-weight: 700;">Convert</h3>
+                        <p style="font-size: 0.95rem; color: #a0a0b0; line-height: 1.6;">Click the convert button and wait for processing (usually takes 5-30 seconds).</p>
+                    </div>
+
+                    <div style="position: relative; padding-left: 4rem;">
+                        <div style="position: absolute; left: 0; top: 0; width: 3rem; height: 3rem; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);">4</div>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 0.8rem; color: #e0e0f0; font-weight: 700;">Download</h3>
+                        <p style="font-size: 0.95rem; color: #a0a0b0; line-height: 1.6;">Download your file directly to your device and enjoy it offline anytime.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4>About</h4>
+                        <a href="#">About Us</a>
+                        <a href="#">Contact</a>
+                        <a href="#">Blog</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Legal</h4>
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Use</a>
+                        <a href="#">Copyright</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <a href="#">Help Center</a>
+                        <a href="#">FAQ</a>
+                        <a href="#">Contact</a>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>© 2024-2026 Y2Mate. All Rights Reserved. | Independent YouTube Converter Service</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ===== 3D BACKGROUND =====
+        let scene, camera, renderer;
+        let particles = [];
+        let mouse = { x: 0, y: 0 };
+        let targetRotation = { x: 0, y: 0 };
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x0f0c29, 1);
+
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const material = new THREE.MeshPhongMaterial({ color: 0xff6b6b, emissive: 0x6b2020, shininess: 100 });
+
+            for (let i = 0; i < 10; i++) {
+                const cube = new THREE.Mesh(geometry, material.clone());
+                cube.position.set((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 40);
+                cube.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                cube.scale.set(Math.random() * 1.5 + 0.5, Math.random() * 1.5 + 0.5, Math.random() * 1.5 + 0.5);
+                cube.velocity = {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02,
+                    rotX: (Math.random() - 0.5) * 0.005,
+                    rotY: (Math.random() - 0.5) * 0.005,
+                    rotZ: (Math.random() - 0.5) * 0.005
+                };
+                scene.add(cube);
+                particles.push(cube);
+            }
+
+            const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+            const sphereMaterial = new THREE.MeshPhongMaterial({ color: 0xee5a6f, emissive: 0x6b2020, shininess: 80 });
+
+            for (let i = 0; i < 6; i++) {
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial.clone());
+                sphere.position.set((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 40);
+                sphere.scale.set(Math.random() * 1.2 + 0.6, Math.random() * 1.2 + 0.6, Math.random() * 1.2 + 0.6);
+                sphere.velocity = {
+                    x: (Math.random() - 0.5) * 0.015,
+                    y: (Math.random() - 0.5) * 0.015,
+                    z: (Math.random() - 0.5) * 0.015,
+                    rotX: (Math.random() - 0.5) * 0.003,
+                    rotY: (Math.random() - 0.5) * 0.003,
+                    rotZ: (Math.random() - 0.5) * 0.003
+                };
+                scene.add(sphere);
+                particles.push(sphere);
+            }
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            directionalLight.position.set(10, 10, 20);
+            scene.add(directionalLight);
+
+            const pointLight1 = new THREE.PointLight(0xff6b6b, 1.2, 100);
+            pointLight1.position.set(20, 20, 20);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0xee5a6f, 0.9, 80);
+            pointLight2.position.set(-20, -20, 20);
+            scene.add(pointLight2);
+
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('mousemove', onMouseMove);
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            targetRotation.x = mouse.y * 0.3;
+            targetRotation.y = mouse.x * 0.3;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particles.forEach(particle => {
+                particle.position.x += particle.velocity.x;
+                particle.position.y += particle.velocity.y;
+                particle.position.z += particle.velocity.z;
+                particle.rotation.x += particle.velocity.rotX;
+                particle.rotation.y += particle.velocity.rotY;
+                particle.rotation.z += particle.velocity.rotZ;
+                if (Math.abs(particle.position.x) > 40) particle.velocity.x *= -1;
+                if (Math.abs(particle.position.y) > 30) particle.velocity.y *= -1;
+                if (Math.abs(particle.position.z) > 20) particle.velocity.z *= -1;
+            });
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.05;
+            camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.05;
+            renderer.render(scene, camera);
+        }
+
+        // ===== CONVERTER LOGIC =====
+        const videoUrlInput = document.getElementById('videoUrl');
+        const convertBtn = document.getElementById('convertBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loader = document.getElementById('loader');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressFill = document.getElementById('progressFill');
+        const formatOptions = document.querySelectorAll('input[name="format"]');
+        const qualityOptions = document.getElementById('qualityOptions');
+
+        // Show quality options for MP3
+        formatOptions.forEach(option => {
+            option.addEventListener('change', (e) => {
+                if (e.target.value === 'mp3') {
+                    qualityOptions.style.display = 'grid';
+                } else {
+                    qualityOptions.style.display = 'none';
+                }
+            });
+        });
+
+        function validateYouTubeUrl(url) {
+            const patterns = [
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+                /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/,
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+            ];
+            return patterns.some(pattern => pattern.test(url));
+        }
+
+        function extractVideoId(url) {
+            const patterns = [
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+                /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/,
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+            ];
+            for (let pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            if (type !== 'processing') {
+                setTimeout(() => {
+                    statusMessage.className = 'status-message';
+                }, 4000);
+            }
+        }
+
+        function simulateDownload(videoId, format, quality) {
+            return new Promise((resolve) => {
+                const duration = format === 'mp3' ? 8000 : 15000;
+                const startTime = Date.now();
+                
+                const progressInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min((elapsed / duration) * 100, 95);
+                    progressFill.style.width = progress + '%';
+                    
+                    if (elapsed >= duration) {
+                        clearInterval(progressInterval);
+                        progressFill.style.width = '100%';
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+
+        function triggerDownload(filename, content) {
+            const element = document.createElement('a');
+            element.setAttribute('href', content);
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            const url = videoUrlInput.value.trim();
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const quality = document.querySelector('input[name="quality"]:checked')?.value || '192';
+
+            if (!url) {
+                showStatus('❌ Please enter a YouTube URL', 'error');
+                return;
+            }
+
+            if (!validateYouTubeUrl(url)) {
+                showStatus('❌ Invalid YouTube URL', 'error');
+                return;
+            }
+
+            const videoId = extractVideoId(url);
+            if (!videoId) {
+                showStatus('❌ Could not extract video ID', 'error');
+                return;
+            }
+
+            loader.classList.add('active');
+            progressFill.style.width = '0%';
+            convertBtn.disabled = true;
+            showStatus(`⏳ Processing ${format.toUpperCase()}...`, 'processing');
+
+            try {
+                await simulateDownload(videoId, format, quality);
+                
+                // Generate mock file
+                const filename = `${videoId}_${quality}kbps.${format === 'mp3' ? 'mp3' : 'mp4'}`;
+                const mockContent = `data:application/${format === 'mp3' ? 'audio' : 'video'}/mp${format === 'mp3' ? '3' : '4'};base64,SUQz`;
+                
+                triggerDownload(filename, mockContent);
+                
+                showStatus(`✅ Download started! Filename: ${filename}`, 'success');
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                loader.classList.remove('active');
+                convertBtn.disabled = false;
+                setTimeout(() => {
+                    progressFill.style.width = '0%';
+                }, 2000);
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            videoUrlInput.value = '';
+            document.getElementById('format-mp3').checked = true;
+            qualityOptions.style.display = 'none';
+            statusMessage.className = 'status-message';
+            progressFill.style.width = '0%';
+            videoUrlInput.focus();
+        });
+
+        videoUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') convertBtn.click();
+        });
+
+        window.addEventListener('load', initThreeJS);
+    </script>
+</body>
+</html>
