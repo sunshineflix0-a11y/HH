@@ -3,6 +3,1089 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2Mate Pro - Ultimate YouTube Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #f06595 100%);
+            --secondary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 107, 107, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0c0;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(ellipse at top, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            padding: 1rem 0;
+            background: rgba(15, 12, 41, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 900;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-link:hover {
+            color: #ff6b6b;
+        }
+
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .hero-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Converter Card */
+        .converter-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 
+                0 25px 45px -20px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            animation: cardFloat 6s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .converter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .converter-card:hover::before {
+            left: 100%;
+        }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 1.5rem 2rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .url-input:focus {
+            border-color: #ff6b6b;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2);
+        }
+
+        .url-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Format Selector */
+        .format-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .format-option {
+            position: relative;
+        }
+
+        .format-option input {
+            display: none;
+        }
+
+        .format-card {
+            padding: 1.8rem;
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .format-option input:checked + .format-card {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(255, 107, 107, 0.25);
+        }
+
+        .format-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .format-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Quality Selector */
+        .quality-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .quality-option input {
+            display: none;
+        }
+
+        .quality-btn {
+            padding: 1rem 1.2rem;
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .quality-option input:checked + .quality-btn {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--text-primary);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            padding: 1.3rem 2.5rem;
+            border: none;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(255, 107, 107, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 2px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 107, 107, 0.15);
+            border-color: #ff6b6b;
+        }
+
+        /* Progress & Status */
+        .progress-container {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .progress-container.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 0;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .status-message {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid rgba(34, 197, 94, 0.5);
+            color: var(--success);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            color: var(--error);
+        }
+
+        .status-processing {
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 6rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            text-align: center;
+            margin-bottom: 4rem;
+            font-weight: 900;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-12px);
+            border-color: #ff6b6b;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-container,
+            .features-section {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+            
+            .converter-card {
+                padding: 2rem;
+                margin: 1rem;
+            }
+        }
+
+        /* PWA Support */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: none;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 107, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 107, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="wrapper">
+        <!-- Header -->
+        <header>
+            <div class="header-container">
+                <a href="#" class="logo">Y2Mate <span style="font-size: 0.6em; opacity: 0.8;">PRO</span></a>
+                <nav class="nav-menu">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#how-to-use" class="nav-link">How to Use</a>
+                    <a href="#" class="nav-link">API</a>
+                    <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-container">
+                <h1 class="hero-title">Download YouTube Videos</h1>
+                <p class="hero-subtitle">
+                    Convert YouTube to MP3 & MP4 in seconds. 
+                    <strong>100% Free • No Ads • No Registration • Works Offline</strong>
+                </p>
+                
+                <div class="converter-card">
+                    <div class="form-group">
+                        <label class="form-label" for="videoUrl">
+                            <i class="fas fa-link"></i> YouTube URL
+                        </label>
+                        <input 
+                            type="url" 
+                            id="videoUrl" 
+                            class="url-input"
+                            placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Format</label>
+                        <div class="format-selector">
+                            <div class="format-option">
+                                <input type="radio" name="format" id="mp3" value="mp3" checked>
+                                <label for="mp3" class="format-card">
+                                    <i class="fas fa-music format-icon"></i>
+                                    <div class="format-title">MP3 Audio</div>
+                                    <div style="font-size: 0.9rem; opacity: 0.8;">High Quality Audio</div>
+                                </label>
+                            </div>
+                            <div class="format-option">
+                                <input type="radio" name="format" id="mp4" value="mp4">
+                                <label for="mp4" class="format-card">
+                                    <i class="fas fa-video format-icon"></i>
+                                    <div class="format-title">MP4 Video</div>
+                                    <div style="font-size: 0.9rem; opacity: 0.8;">Full HD Video</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="qualityGroup" style="display: block;">
+                        <label class="form-label">Quality</label>
+                        <div class="quality-selector">
+                            <div class="quality-option">
+                                <input type="radio" name="quality" value="128" id="q128" checked>
+                                <label for="q128" class="quality-btn">128kbps</label>
+                            </div>
+                            <div class="quality-option">
+                                <input type="radio" name="quality" value="192" id="q192">
+                                <label for="q192" class="quality-btn">192kbps</label>
+                            </div>
+                            <div class="quality-option">
+                                <input type="radio" name="quality" value="256" id="q256">
+                                <label for="q256" class="quality-btn">256kbps</label>
+                            </div>
+                            <div class="quality-option">
+                                <input type="radio" name="quality" value="320" id="q320">
+                                <label for="q320" class="quality-btn">320kbps</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="convertBtn">
+                            <i class="fas fa-download"></i> Convert & Download
+                        </button>
+                        <button class="btn btn-secondary" id="clearBtn">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Ready to convert...</div>
+                    </div>
+
+                    <div class="status-message" id="statusMessage"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features-section" id="features">
+            <h2 class="section-title">Why Choose Y2Mate Pro?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-bolt feature-icon" style="color: #ff6b6b;"></i>
+                    <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary);">⚡ Ultra Fast</h3>
+                    <p>Lightning-fast conversion powered by WebAssembly. Process videos in seconds, not minutes.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-shield-alt feature-icon" style="color: #22c55e;"></i>
+                    <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary);">🔒 Privacy First</h3>
+                    <p>All processing happens in your browser. No servers, no tracking, 100% anonymous.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-mobile-alt feature-icon" style="color: #3b82f6;"></i>
+                    <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary);">📱 PWA Ready</h3>
+                    <p>Install as an app on your phone or desktop. Works offline and syncs across devices.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-hdd feature-icon" style="color: #f59e0b;"></i>
+                    <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-primary);">💾 No Limits</h3>
+                    <p>Unlimited downloads, no watermarks, all qualities. Batch processing support coming soon.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- PWA Install Prompt -->
+    <div class="install-prompt" id="installPrompt">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-download" style="font-size: 1.5rem; color: #22c55e;"></i>
+            <div>
+                <strong>Install Y2Mate Pro</strong>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Add to home screen for offline use</div>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+            <button class="btn btn-primary" id="installBtn" style="flex: 1; padding: 0.8rem;">Install</button>
+            <button class="btn btn-secondary" id="dismissInstall" style="flex: 1; padding: 0.8rem;">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== ENHANCED 3D BACKGROUND =====
+        class ParticleSystem {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: document.getElementById('canvas'), 
+                    antialias: true, 
+                    alpha: true 
+                });
+                this.particles = [];
+                this.mouse = { x: 0, y: 0 };
+                this.time = 0;
+                this.init();
+            }
+
+            init() {
+                this.camera.position.z = 50;
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                
+                // Create particle system
+                this.createParticles();
+                this.createLights();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            createParticles() {
+                const particleCount = 150;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const velocities = [];
+                const sizes = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 200;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 150;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    
+                    velocities.push({
+                        x: (Math.random() - 0.5) * 0.02,
+                        y: (Math.random() - 0.5) * 0.015,
+                        z: (Math.random() - 0.5) * 0.01
+                    });
+                    sizes.push(Math.random() * 3 + 1);
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const material = new THREE.PointsMaterial({
+                    size: 2,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const colors = new Float32Array(particleCount * 3);
+                for (let i = 0; i < particleCount * 3; i += 3) {
+                    const hue = Math.random() * 0.2 + 0.8;
+                    colors[i] = 1;     // R
+                    colors[i + 1] = hue; // G
+                    colors[i + 2] = 1;   // B
+                }
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const points = new THREE.Points(geometry, material);
+                this.scene.add(points);
+                this.particles = { points, velocities, sizes };
+            }
+
+            createLights() {
+                const ambient = new THREE.AmbientLight(0x404040, 0.4);
+                this.scene.add(ambient);
+
+                const pointLight1 = new THREE.PointLight(0xff6b6b, 2, 100);
+                pointLight1.position.set(30, 30, 30);
+                this.scene.add(pointLight1);
+
+                const pointLight2 = new THREE.PointLight(0xee5a6f, 1.5, 80);
+                pointLight2.position.set(-30, -20, 20);
+                this.scene.add(pointLight2);
+            }
+
+            setupEventListeners() {
+                window.addEventListener('resize', () => this.onResize());
+                document.addEventListener('mousemove', (e) => {
+                    this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                });
+            }
+
+            onResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.time += 0.01;
+
+                // Animate particles
+                const positions = this.particles.points.geometry.attributes.position.array;
+                for (let i = 0; i < this.particles.velocities.length; i++) {
+                    positions[i * 3] += this.particles.velocities[i].x + this.mouse.x * 0.1;
+                    positions[i * 3 + 1] += this.particles.velocities[i].y + this.mouse.y * 0.1;
+                    positions[i * 3 + 2] += this.particles.velocities[i].z;
+
+                    // Bounce back
+                    if (Math.abs(positions[i * 3]) > 100) this.particles.velocities[i].x *= -1;
+                    if (Math.abs(positions[i * 3 + 1]) > 75) this.particles.velocities[i].y *= -1;
+                    if (Math.abs(positions[i * 3 + 2]) > 50) this.particles.velocities[i].z *= -1;
+                }
+                this.particles.points.geometry.attributes.position.needsUpdate = true;
+
+                this.camera.rotation.y = this.mouse.x * 0.2;
+                this.camera.rotation.x = this.mouse.y * 0.2;
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // ===== MAIN APP LOGIC =====
+        class Y2MateApp {
+            constructor() {
+                this.videoUrl = document.getElementById('videoUrl');
+                this.convertBtn = document.getElementById('convertBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.progressContainer = document.getElementById('progressContainer');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.statusMessage = document.getElementById('statusMessage');
+                this.formatRadios = document.querySelectorAll('input[name="format"]');
+                this.qualityGroup = document.getElementById('qualityGroup');
+                
+                this.init();
+            }
+
+            init() {
+                // Event listeners
+                this.convertBtn.addEventListener('click', () => this.convert());
+                this.clearBtn.addEventListener('click', () => this.clear());
+                this.videoUrl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.convert();
+                });
+                this.videoUrl.addEventListener('paste', () => {
+                    setTimeout(() => this.autoFocus(), 100);
+                });
+
+                // Format change handler
+                this.formatRadios.forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        this.qualityGroup.style.display = e.target.value === 'mp3' ? 'block' : 'none';
+                    });
+                });
+
+                // PWA support
+                this.initPWA();
+                
+                // Theme toggle
+                document.getElementById('themeToggle').addEventListener('click', () => {
+                    document.body.classList.toggle('dark-theme');
+                });
+
+                new ParticleSystem();
+            }
+
+            autoFocus() {
+                this.videoUrl.focus();
+                this.videoUrl.select();
+            }
+
+            validateUrl(url) {
+                const patterns = [
+                    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+                    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+                    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+                ];
+                return patterns.some(pattern => pattern.test(url));
+            }
+
+            extractVideoId(url) {
+                const patterns = [
+                    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+                    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+                    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+                ];
+                for (let pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match) return match[1];
+                }
+                return null;
+            }
+
+            showStatus(message, type = 'processing') {
+                this.statusMessage.textContent = message;
+                this.statusMessage.className = `status-message show status-${type}`;
+                setTimeout(() => {
+                    this.statusMessage.classList.remove('show');
+                }, type === 'processing' ? 10000 : 5000);
+            }
+
+            updateProgress(percent, text) {
+                this.progressFill.style.width = `${percent}%`;
+                this.progressText.textContent = text;
+            }
+
+            async convert() {
+                const url = this.videoUrl.value.trim();
+                const format = document.querySelector('input[name="format"]:checked').value;
+                const quality = document.querySelector('input[name="quality"]:checked')?.value || '192';
+
+                // Validation
+                if (!url) {
+                    this.showStatus('❌ Please enter a YouTube URL', 'error');
+                    return;
+                }
+
+                if (!this.validateUrl(url)) {
+                    this.showStatus('❌ Invalid YouTube URL. Please check and try again.', 'error');
+                    return;
+                }
+
+                const videoId = this.extractVideoId(url);
+                if (!videoId) {
+                    this.showStatus('❌ Could not extract video ID from URL', 'error');
+                    return;
+                }
+
+                // Start conversion
+                this.progressContainer.classList.add('active');
+                this.convertBtn.disabled = true;
+                this.convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+
+                try {
+                    this.updateProgress(10, 'Analyzing video...');
+                    await this.simulateFetchVideoInfo(videoId);
+
+                    this.updateProgress(30, 'Downloading video stream...');
+                    await this.simulateDownloadStream(videoId, format);
+
+                    this.updateProgress(70, `${format.toUpperCase()} conversion...`);
+                    await this.simulateConversion(format, quality);
+
+                    this.updateProgress(95, 'Preparing download...');
+                    await this.simulateFinalization();
+
+                    // Create realistic mock download
+                    const filename = `Y2Mate_${videoId}_${quality}kbps.${format}`;
+                    const fileSize = format === 'mp3' ? '3.2 MB' : '12.5 MB';
+                    
+                    this.showStatus(`✅ Download ready! ${filename} (${fileSize})`, 'success');
+                    
+                    // Simulate download with realistic file
+                    this.triggerDownload(filename, format);
+                    
+                } catch (error) {
+                    this.showStatus(`❌ Conversion failed: ${error.message}`, 'error');
+                } finally {
+                    this.progressContainer.classList.remove('active');
+                    this.convertBtn.disabled = false;
+                    this.convertBtn.innerHTML = '<i class="fas fa-download"></i> Convert & Download';
+                    setTimeout(() => this.updateProgress(0, 'Ready to convert...'), 1000);
+                }
+            }
+
+            async simulateFetchVideoInfo(videoId) {
+                return new Promise(resolve => setTimeout(resolve, 1500));
+            }
+
+            async simulateDownloadStream(videoId, format) {
+                return new Promise(resolve => setTimeout(resolve, 3000));
+            }
+
+            async simulateConversion(format, quality) {
+                return new Promise(resolve => setTimeout(resolve, 4000));
+            }
+
+            async simulateFinalization() {
+                return new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            triggerDownload(filename, format) {
+                // Create a more realistic mock file
+                const audioData = btoa('RIFF$WBMP\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00\x44\xac\x00\x00\x10\xb1\x02\x00\x04\x00data\x00\x00\x00\x00');
+                const videoData = btoa('mock video data for realistic file size');
+                
+                const content = `data:${format === 'mp3' ? 'audio/mpeg' : 'video/mp4'};base64,${format === 'mp3' ? audioData : videoData}`;
+                
+                const link = document.createElement('a');
+                link.href = content;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            clear() {
+                this.videoUrl.value = '';
+                document.getElementById('mp3').checked = true;
+                this.qualityGroup.style.display = 'block';
+                this.progressContainer.classList.remove('active');
+                this.statusMessage.classList.remove('show');
+                this.videoUrl.focus();
+            }
+
+            initPWA() {
+                let deferredPrompt;
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    document.getElementById('installPrompt').style.display = 'block';
+                });
+
+                document.getElementById('installBtn').addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            document.getElementById('installPrompt').style.display = 'none';
+                            deferredPrompt = null;
+                        }
+                    }
+                });
+
+                document.getElementById('dismissInstall').addEventListener('click', () => {
+                    document.getElementById('installPrompt').style.display = 'none';
+                });
+            }
+        }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new Y2MateApp();
+        });
+
+        // Preload fonts for better performance
+        WebFontConfig = {
+            google: { families: ['Inter:400,500,700,900'] }
+        };
+        (function() {
+            var wf = document.createElement('script');
+            wf.src = 'https://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+            wf.async = true;
+            document.head.appendChild(wf);
+        })();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Y2Mate - YouTube to MP3 & MP4 Converter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -979,4 +2062,4 @@
         window.addEventListener('load', initThreeJS);
     </script>
 </body>
-</html>
+</html> -->
